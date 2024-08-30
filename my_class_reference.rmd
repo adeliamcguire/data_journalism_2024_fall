@@ -21,7 +21,7 @@ Consider this a personal guide to the commands and functions you will learn. In 
 
 ### How to set the working directory
 
-The command to set a working directory is setwd(). For example, this sets the working directory to a directory called data_journalism_2024_fall inside a directory called jour472 located inside your home directory (the ~ is equivalent of /Users/[youruser] on a Mac).
+The command to set a working directory is setwd(). For example, this sets the working directory to a directory called data_journalism_2024_fall inside a directory called jour472 located inside your home directory (the \~ is equivalent of /Users/[youruser] on a Mac).
 
 ```{r}
 setwd("~/jour472/data_journalism_2024_fall")
@@ -32,4 +32,24 @@ setwd("~/jour472/data_journalism_2024_fall")
 ```{r}
 install.packages("tidyverse")
 library(tidyverse)
+```
+
+**Useful Functions - Mathematics**
+
+```{r}
+add_numbers <- function(a, b) {
+  return(a + b)
+}
+subtract_numbers <- function(a, b) {
+  return(a - b)
+}
+multiply_numbers <- function(a, b) {
+  return(a * b)
+}
+divide_numbers <- function(a, b) {
+  if (b == 0) {
+    stop("Error: Can not divide by zero.")
+  }
+  return(a / b)
+}
 ```
