@@ -53,3 +53,24 @@ divide_numbers <- function(a, b) {
   return(a / b)
 }
 ```
+
+**Tidyverse Functions**
+
+```{r}
+# Load tidyverse package
+library(tidyverse)
+
+# Read in a CSV file into data frame
+data <- read_csv("")
+
+# Organize Data 
+summary_data <- data()
+  group_by()
+  summarize(
+    count = n(),
+    mean_value = mean(, na.rm = TRUE), 
+    total_value = sum(, na.rm = TRUE)
+  )
+  
+print (summary_data)
+```
