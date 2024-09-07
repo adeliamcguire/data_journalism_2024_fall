@@ -1,0 +1,124 @@
+---
+title: "lab_01"
+author: "Adelia McGuire"
+date: "2024-09-06"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# Turn off scientific notation
+options(scipen=999)
+```
+
+## About this lab
+
+To complete this lab, you need to: \* run existing code as directed (look for **Task**). \* modify existing code as directed (look for **Task**). \* write code in empty codeblocks provided to answer questions included (look for **Q**). \* write out the answer in the form of a complete sentence in the space given (look for **A**). When you are finished, commit changes and push to your personal GitHub repo, then submit the URL to this document on ELMS.
+
+Remember to add any new verbs or concepts to your reference notebook!
+
+## Load libraries and establish settings
+
+**Task** Run the codeblock below to load the Tidyverse. To run the codeblock, hit the little green play button in the upper right corner of the gray area (the codeblock) below.
+
+```{r}
+# Load the tidyverse. If you have not installed the tidyverse already, remove the # from the next line and run it first.  
+# install.packages('tidyverse')
+library(tidyverse)
+```
+
+## Load Data
+
+We're going to load the slice of WinRed contribution data from West Virginia, which is in a file called `lab_01.rds`
+
+**Task** Using the example from the pre_lab, write code to load the RDS file and assign it to a good variable name.
+
+```{r}
+maryland_winred_contribution_data <- read_rds("lab_01.rds")
+```
+
+## Examine Data
+
+**Task** Run the codeblock below to use glimpse to get a sense of the column names, types and sample data.
+
+**Q1** How many rows and columns does this dataframe have?
+
+**A1** This dataframe has 24 columns and 40,441 rows. 
+
+```{r}
+glimpse(maryland_winred_contribution_data)
+```
+
+## Answer questions
+
+**Q2** Which West Virginia city provided the largest number of contributions? How many?
+
+**A2** The city of Charleston, WV provided the largest number of contributions with a total of 86508.18.	 
+
+```{r}
+maryland_winred_contribution_data |>
+  group_by(city) |>
+  summarise(
+    count_contribs = n(),
+     total_amount = sum(amount)
+  ) |>
+  arrange(desc(total_amount))
+```
+
+**Q3** Which West Virginia cities accounted for the fewest contributions? How many of them, roughly speaking?
+
+**A3** The city of Princewick, WV accounted for the fewest contributions with -239.01. Princewick tops the city of Milton who has the second least contributions with -48.93 and Ccbxxthvc with the third least of 1.04.
+
+```{r}
+maryland_winred_contribution_data |>
+  group_by(city) |>
+  summarise(
+    count_contribs = n(),
+     total_amount = sum(amount)
+  ) |>
+arrange(total_amount)
+```
+
+**Q4** What's your best educated guess to explain why the city identified in question 2 had more contributions compared to the cities identified in question 3? Hint: you won't find the answer in the data, you'll need to do some quick web research. You do not need to write any code for this question, so no codeblock is provided.
+
+**A4** Upon my research I found that beyond being the capitol of West Virgina, Charleston is one of the wealthiest cities in the state. When reading on Princewick and Milton I found the opposite to be true. Unlike Charelston, Princewick is an unincorporated community and Milton is an extremely small town made up of less than 3,000 people. I belive that Charlestons wealth and Princewick and Milton's lack of it directly correlates to their locations in the realm of the amount of contributions they put forward. Considering that Charleston has far more general wealth than Princewick and Milton I believe that my findings make sense. 
+
+**Q5** What recipient got the largest total amount of money? How many contributions did they receive and what was the average donation?
+
+**A5** Shelley Rohrig received the largest total amount of money. Rohrig received 1205 contributions and a total amount of 14502.63. Her mean donation was 12.035378 and her median donation was 10.000.	
+
+```{r}
+maryland_winred_contribution_data |>
+  group_by(first_name, last_name) |>
+  summarise(
+    count_contribs = n(),
+     total_amount = sum(amount),
+    mean_amount = mean(amount),
+    median_amount = median(amount)
+  ) |>
+  arrange(desc(total_amount))
+```
+
+**Q6** What is that top recipient and what explains its popularity? Hint: this will require web research, you won't be able to answer this purely from the data set. You do not need to write any code for this question, so no codeblock is provided.
+
+**A6** Shelley Rohrig is a recipient for Wheeling which is one of West Virginia's wealthiest cities. Rohrigs popularity could be explained by her location in that Wheeling is a highly populated city where many people have access to more money than in other locations across West Virginia.  
+
+**Q7**. Using the answer from A5 as a starting point, produce a summary table that has the following information for each recipient: \* count of contributions \* total amount of all contributions \* the average contribution amount \* the median contribution amount \* the smallest contribution amount \* the largest contribution amount
+
+Store it as a variable object called `wv_summary` so that you can examine it with the data viewer. What newsworthy nuggets jump out at you that you could imagine dropping into a news story? Write a few summary sentences with overall findings.
+
+**A7** After examining the wv_summary I found that four of the top ten leading recipients were from Charleston, the capitol of West Virginia and a very wealthy city. This finding is also supported by the fact that the mean contribution amount of the top recipient in Charleston was a rather high 41.577103. One interesting thing I picked up from the data viewer is that Joseph Bunn of the city if Charleston only received one contribution. However, the sole contribution that Bunn received was worth $10,000 which ultimately earned him the spot of sixth highest in contribution amount. 
+
+```{r wv_summary}
+'wv_summary' <- maryland_winred_contribution_data |>
+  group_by(first_name, last_name, city) |>
+  summarise(
+    count_contribs = n(),
+    total_amount = sum(amount),
+    mean_amount = mean(amount),
+    median_amount = median(amount),
+    min_amount = min(amount),
+    max_amount = max(amount)
+  ) |>
+  arrange(desc(total_amount))
+```
