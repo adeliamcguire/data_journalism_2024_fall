@@ -1,0 +1,112 @@
+---
+title: "lab_05"
+author: "Adelia McGuire"
+date: "2024-10-02"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load libraries and establish settings
+
+```{r}
+# load the tidyverse
+library(tidyverse)
+library(lubridate)
+```
+
+## Getting Started
+
+This week we'll be combining and joining data to make it more useful and to ask some questions about it. This week, we'll revisit our new Maryland voters data and try to join it with contributions to the Harris campaign from Maryland donors made via ActBlue. Can we find new voters who are not registered Democrats who gave to Harris after she became a presidential candidate on July 21? What, if anything, can we say about those people?
+
+We'll be doing something similar to what Ence Morse did for [this Washington Post story](https://www.washingtonpost.com/politics/2024/09/24/kamala-harris-younger-donors/?pwapi_token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyZWFzb24iOiJnaWZ0IiwibmJmIjoxNzI3MzIzMjAwLCJpc3MiOiJzdWJzY3JpcHRpb25zIiwiZXhwIjoxNzI4NzA1NTk5LCJpYXQiOjE3MjczMjMyMDAsImp0aSI6ImIwYWMxNTk4LWMwMDgtNDE5Ny04MjAyLWVmMWNjZWFmYWZiMiIsInVybCI6Imh0dHBzOi8vd3d3Lndhc2hpbmd0b25wb3N0LmNvbS9wb2xpdGljcy8yMDI0LzA5LzI0L2thbWFsYS1oYXJyaXMteW91bmdlci1kb25vcnMvIn0.3-s0tBkMV7Y9DD21CBsKMlaliGlOKT2egCO-UFT735Y), just on a smaller scale.
+
+First, load two CSV contribution files in the `data` folder, one each for donations made in July and August, and then combine them into a single dataframe.
+
+```{r}
+# load the Harris contribution data files and combine them
+august_harris_data <- read_csv("data/august_harris.csv")
+july_harris_data <- read_csv("data/july_harris.csv")
+```
+
+Next, let's read in the new voters (people who registered in 2024):
+
+```{r}
+# load the new voters data
+new_voters_data <- read_csv("data/new_voters.csv")
+```
+
+Next join the Harris donations to the voter data. Remember, people's names are common, __so you'll want to use name columns and address information__. You'll need to figure out which columns to use from both dataframes. The new_voters data has both a single Address column and various parts of the address, such as HouseNumber. Make a plan for picking your join columns - try out some combinations - and save the results to a new dataframe.
+
+# join the combined Harris file to the new voters
+# you will need to determine what columns to use
+
+```{r}
+# combined July and August Harris data
+combined_harris_data <- bind_rows(list(july_harris_data, august_harris_data))
+view(combined_harris_data)
+```
+
+```{r}
+# combined Harris data with new voters data
+joined_data <- combined_harris_data |> inner_join(new_voters_data, join_by(last_name==LastName,first_name==FirstName, city==ResidentialCity, state==ResidentialState, zip==ResidentialZip, address_one==Address))
+
+view(joined_data)
+```
+
+## Answer questions
+
+Q1. Explain why you used the columns you did to make the join, and why that result is better than other ways you tried. Are there any problems with the join you made, such as the possibility of false positives?
+
+A1.In the pursuit of carrying out the join function, I used 12 individual columns (six sets) to alter the results for a combined dataframe of new_voters_data and combined_harris_data. One join that I tried that I ultimately found to be rather restricting to my data results was joining the middle_name and MiddleName columns. I found that although every single middle name was listed as NA in the combined_harris_data dataframe, middle names were included in the new_voters_data. In combining these two columns the middle name column from new_voters_data was eliminated, depriving my ability  seeing additional beneficial data. 
+
+Q2. Based on your join, how many donations to Harris have come from people who registered this year? How many unique people does that represent, and which donors have given the largest _number_ of donations since July 20? 
+
+A2. Based on my join, it is clear that there have been 323 donations to Harris from people who registered this year. This number of donations has come from a total of 236 different people. My new dataframe, donation_data, reveals that there are three people who gave the largest number of donations since the date of July 20th, 2024. BRITTANY MUSOLINO, ERIC SNIPE, and SOPHIA HOFFER-PERKINS each donated seven times, more than any other donor. 
+
+```{r}
+donation_data <- joined_data |>
+  group_by(first_name, last_name) |>
+    summarise(num_contribs=n()) |>
+  
+arrange(desc(num_contribs))
+view(donation_data)
+```
+
+Q3. What are the party and gender breakdowns of those donors? How many donations has Harris gotten from non-Democrats?
+
+A3. In order to identify the party and gender breakdowns of these donors I needed to use the group_by and summarise functions.The data reveals that the majority of donations come from Democrats, with Democratic females contributing the most—159 donations totaling 10011.04 dollars. This is followed by Democratic males with 122 donations amounting to 6,951.12 and a small number of Democratic donations came from individuals with unspecified or "NA" gender. Non-Democrat contributions are very minimal in comparison. In terms of individuals who identify with the Republican party, females donated more frequently than males. Although this contribution was small with just 3 for females and 1 for males.Unaffiliated donors made a few contributions, with males contributing more than females. Libertarian, No Listed Membership (NLM), and Other party donors also made some small, rather insignificant contributions. Overall, this data reveleas that Democratic donors win by a mile in both in the number of donations and total amount contributed. In the second code block you will see my coding for the amount of donations Harris has gotten from non-Democratic donors. I found that Harris received 32 contributions amounting to a total of 1588.58 dollars. 
+
+```{r}
+party_and_gender <- joined_data |>
+  group_by(Party, Gender) |>
+    summarise(num_contribs=n(), total_amount = sum(amount, na.rm = TRUE)) |>
+    arrange(desc(num_contribs))
+
+view(party_and_gender)
+```
+
+```{r}
+harris_non_democratic_donations <- joined_data |>
+  filter(Party != 'DEM') |>
+  summarise(num_contribs = n(), total_amount = sum(amount, na.rm = TRUE))
+
+view(harris_non_democratic_donations)
+```
+
+Q4. Choose your own adventure: I want you to come up with a question you could ask of one of the dataframes we've created for this lab. It could involve just the new voters, or the donors or the joined dataframe, but it cannot be a variation of a previous question (so, for example, you can't ask, "How many Republicans have given to Harris"). First write the question and then try to answer it by writing code. If you're not sure of the exact code, try googling (or ask me for advice) but, at a minimum, describe what you think you'd have to do to answer it and what the results would look like. That can help.
+
+A4: Based on my completion of this lab, one question that I feel could be proposed is... what is the average donation amount per party affiliation for those who registered in 2024? This question is interesting in that it provides insight into the typical donation size from new voters by political affiliation, ultimaltey allowing data journalists or whomever else may be accessing this data to make further comparison between parties in terms of their average/typical financial support to Harris. I have included the code to answer this question below... 
+
+```{r}
+average_donation_by_political_party <- joined_data |>
+  group_by(Party) |>
+  summarise(avg_donation = mean(amount, na.rm = TRUE)) |>
+  arrange(desc(avg_donation))
+
+view(average_donation_by_political_party)
+```
+
+A4 (Part 2): In order to answer my question and write a working code block I first created a new dataframe called average_donation_by_political_party. I then used the group_by, summarise, and arrange function to confine the dataframe to only reveal party and average donation. 
