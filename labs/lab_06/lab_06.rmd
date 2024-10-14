@@ -1,0 +1,291 @@
+---
+title: "lab_06"
+author: "Adelia McGuire"
+date: "2024-10-09"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## You will need
+
+-   Tabula
+
+## Load libraries and establish settings
+
+```{r}
+# Turn off scientific notation
+options(scipen=999)
+
+# Load the tidyverse and any other libraries you'll need
+library(tidyverse)
+library(janitor)
+```
+
+## Get Our PDF
+
+We'll be working with the [Maryland monthly voter registration update](https://elections.maryland.gov/pdf/vrar/2024_09.pdf) from the State Board of Elections. You'll want to download it to a place you'll remember (like your Downloads folder, or the labs folder in your repository). The goal is to write a couple of paragraphs that summarize the changes in voter registration in Maryland during the month of September.
+
+## Setup Tabula
+
+Start Tabula, then go to <http://127.0.0.1:8080/> in your browser. Click the "Browse" button and find the PDF file and click "open", and then click the "Import button" in Tabula. This will take a few seconds.
+
+This PDF has multiple possible tables to extract. We're going to make four dataframes: 
+
+* new registrations by party
+* removals by party
+* changes in registration
+* current registrations by county.
+
+You will need to draw boxes around four sections and export four CSV files that you will load into R. In Tabula, draw a box around the borders of those tables and click the "Preview & Export Extracted Data" button for each one. The export should look pretty clean, but might be missing some column headers. You'll need to include total columns.
+
+Export each CSV (each one should be called `tabula-2024-09.csv` by default, so you should rename them for clarity) to your lab_06/data folder.
+
+From there, you will need to read in and clean up the data, and in particular the headers. You can choose to include the headers from the PDF in your exported CSV files OR to exclude them and add them when importing. The pre_lab has an example of how to do this!
+
+## Load and clean up the data in R
+
+You will need to read in and clean up the data so that it can be used for analysis. By "clean" I mean the column headers must not contain spaces and they should have meaningful names, not "x1" or something similar. The current registrations dataframe *MUST* include the county name, but should not include the columns under `Changes` and `Party Affiliation From`. How you do that is up to you (and could involve something outside R), but you can use `select()` with or without the minus sign to include or exclude certain columns. You also can use the `rename` function to, well, rename columns.
+
+```{r}
+# Party registrations
+party_registrations_2024 <- read_csv("~/Downloads/GitHub JOUR472/GitHub Folder/data_journalism_2024_fall/labs/lab_06/data/new_registration_by_party_2024.csv")
+party_registrations_2024 <- party_registrations_2024 |>
+  clean_names() |>
+  rename(registration_method = x1)
+
+party_registrations_2024
+```
+
+```{r}
+# Removals
+removals_2024 <- read_csv("~/Downloads/GitHub JOUR472/GitHub Folder/data_journalism_2024_fall/labs/lab_06/data/removals_2024.csv")
+removals_2024 <- removals_2024 |>
+  clean_names() |>
+  rename(removal_method = x1) |>
+  filter(!is.na(removal_method))
+
+removals_2024
+```
+
+```{r}
+# Changes
+changes_2024 <- read_csv("~/Downloads/GitHub JOUR472/GitHub Folder/data_journalism_2024_fall/labs/lab_06/data/changes_2024.csv")
+changes_2024 <- changes_2024 |>
+  clean_names() |>
+  rename(county = x1) |>
+  select(-any_of(c("address", "name"))) 
+
+changes_2024
+```
+
+```{r}
+# Current registrations
+current_registrations_2024 <- read_csv("~/Downloads/GitHub JOUR472/GitHub Folder/data_journalism_2024_fall/labs/lab_06/data/total active registration_2024.csv")
+current_registrations_2024 <- current_registrations_2024 |>
+clean_names()
+county_vector <- c("ALLEGANY", "ANNE ARUNDEL", "BALTIMORE CITY", "BALTIMORE CO.", "CALVERT",
+                   "CAROLINE", "CARROLL", "CECIL", "CHARLES", "DORCHESTER", "FREDERICK",
+                   "GARRETT", "HARFORD", "HOWARD", "KENT", "MONTGOMERY", "PR. GEORGE'S",
+                   "QUEEN ANNE'S", "ST. MARY'S", "SOMERSET", "TALBOT", "WASHINGTON",
+                   "WICOMICO", "WORCESTER", "TOTAL")
+current_registrations_2024 <- current_registrations_2024 |>
+  mutate(county = county_vector) |>
+  select(county, everything(), total)
+
+print(current_registrations_2024)
+```
+
+## Rinse, Repeat: September 2022 data
+
+Do all of that again, for the [September 2022 voter registration update](https://elections.maryland.gov/pdf/vrar/2022_09.pdf), so we can compare the two. If you've done well, this is easy: just do the same steps in Tabula, export the files and use the same code to read in and clean up the data, *just remember to give these dataframes different names* so that you can compare September 2024 to September 2022.
+
+To answer the following questions, you'll need to calculate percentages and do other calculations. Whether you do that by combining or joining dataframes or you write code to run separately on both is up to you.
+
+```{r}
+# Party registrations
+party_registrations_2022 <- read_csv("~/Downloads/GitHub JOUR472/GitHub Folder/data_journalism_2024_fall/labs/lab_06/data/new_registration_by_party_2022.csv")
+party_registrations_2022 <- party_registrations_2022 |>
+  clean_names() |>
+  rename(registration_method = x1)
+
+party_registrations_2022
+```
+
+```{r}
+# Removals
+removals_2022 <- read_csv("~/Downloads/GitHub JOUR472/GitHub Folder/data_journalism_2024_fall/labs/lab_06/data/removals_2022.csv")
+removals_2022 <- removals_2022 |>
+  clean_names() |>
+  rename(removal_method = x1) |>
+  filter(!is.na(removal_method))
+
+removals_2022
+```
+
+```{r}
+# Changes
+changes_2022 <- read_csv("~/Downloads/GitHub JOUR472/GitHub Folder/data_journalism_2024_fall/labs/lab_06/data/changes_2022.csv")
+changes_2022 <- changes_2022 |>
+  clean_names() |>
+  rename(county = x1) |>
+  select(-any_of(c("address", "name"))) 
+
+changes_2022
+```
+
+```{r}
+# Current registrations
+current_registrations_2022 <- read_csv("~/Downloads/GitHub JOUR472/GitHub Folder/data_journalism_2024_fall/labs/lab_06/data/total_active_registration_2022.csv")
+
+current_registrations_2022 <- current_registrations_2022 |>
+clean_names()
+county_vector <- c("ALLEGANY", "ANNE ARUNDEL", "BALTIMORE CITY", "BALTIMORE CO.", "CALVERT",
+                   "CAROLINE", "CARROLL", "CECIL", "CHARLES", "DORCHESTER", "FREDERICK",
+                   "GARRETT", "HARFORD", "HOWARD", "KENT", "MONTGOMERY", "PR. GEORGE'S",
+                   "QUEEN ANNE'S", "ST. MARY'S", "SOMERSET", "TALBOT", "WASHINGTON",
+                   "WICOMICO", "WORCESTER", "TOTAL")
+current_registrations_2022 <- current_registrations_2022 |>
+  mutate(county = county_vector) |>
+  select(county, everything(), total)
+
+current_registrations_2022
+```
+
+## Answer questions
+
+Q1. Calculate the percentage of registered Democrats, Republicans and unaffiliated voters for the entire state in September 2024 and September 2022, and then calculate the percentage change for those three party categories (the formula for percentage change is easy to remember: (New-Old)/Old). How would you describe the changes in these partisan categories in a story? What's the most interesting thing about these changes that would be the lede of that story?
+
+A1. Based on the code I wrote for this questions, it is clear that the percentage of registered democrats decreased by approximately 3.03%, the percentage of registered republicans decreased by approximately 0.62% and the percentage of registered unaffiliated voters increased by around 7.98%. This data tells me that there has been a noticeable shift in Maryland political landscape in the two year span between 2022 and 2024. Both of the democratic and republican parties experienced decreases in their registered voter percentages which indicates their may be a decline party loyalty amongst voters. That being said, unaffiliated voters saw a rather significant increase of almost 8% which communicates that their is a growing trend of voters identifying with the independent party instead of aligning their political views with one of the major established parties. To me, this data is telling a story about how Maryland is shifting towards a state with more neutral and moderate perspective. I could see a lede being something like... With the 2024 election right around the corner, a shift in voter registration patterns is indicating a possible new era of political dynamics for Maryland. 
+
+```{r}
+total_registrations_2022 <- current_registrations_2022 |> summarise(total = sum(total, na.rm = TRUE))
+total_registrations_2024 <- current_registrations_2024 |> summarise(total = sum(total, na.rm = TRUE))
+
+democrats_2022 <- sum(current_registrations_2022$dem, na.rm = TRUE) / total_registrations_2022$total * 100
+republicans_2022 <- sum(current_registrations_2022$rep, na.rm = TRUE) / total_registrations_2022$total * 100
+unaffiliated_2022 <- sum(current_registrations_2022$unaf, na.rm = TRUE) / total_registrations_2022$total * 100
+
+democrats_2024 <- sum(current_registrations_2024$dem, na.rm = TRUE) / total_registrations_2024$total * 100
+republicans_2024 <- sum(current_registrations_2024$rep, na.rm = TRUE) / total_registrations_2024$total * 100
+unaffiliated_2024 <- sum(current_registrations_2024$unaf, na.rm = TRUE) / total_registrations_2024$total * 100
+
+change_democrats <- (democrats_2024 - democrats_2022) / democrats_2022 * 100
+change_republicans <- (republicans_2024 - republicans_2022) / republicans_2022 * 100
+change_unaffiliated <- (unaffiliated_2024 - unaffiliated_2022) / unaffiliated_2022 * 100
+
+print(paste("Percentage change Democrats:", change_democrats))
+print(paste("Percentage change Republicans:", change_republicans))
+print(paste("Percentage change Unaffiliated:", change_unaffiliated))
+```
+
+Q2. Among the Maryland jurisdictions with the most registered voters, which one had the biggest percentage increase in unaffiliated voters between 2022 and 2024? How did that county vote for governor in 2022 and for president in 2020? Contrast the partisan percentages of that county with the county that had the eighth-largest percentage increase in unaffiliated voters. You should display information from the data that shows the counties with the largest percentage increase first.
+
+A2.Based on my calculations I have identified Prince George's County to be the Maryland jurisdiction with the largest percentage increase (17.19575%) in unaffiliated voter, telling me that their is a growing trend in voters around this area that are making the decision to not align with the traditional democratic/republican party system. PG County voted democratic in both the 2022 election for governor and the 2020 presidential election. Frederick County also saw an increase(10.54347%) in unaffiliated voters. Though Frederick County supported the democratic candidate in the 2020 presidential election, the data tells me that they voted Republican in the 2022 election for governor. As I mentioned in the previous question, this significant increase in voters registering unaffiliated is telling to the recent shift in political views and alignment across Maryland. 
+
+```{r}
+unaffiliated_2022 <- current_registrations_2022 |>
+  select(county, unaf)
+unaffiliated_2024 <- current_registrations_2024 |>
+  select(county, unaf)
+unaffiliated_difference <- unaffiliated_2022 |>
+  inner_join(unaffiliated_2024, by = "county", suffix = c("_2022", "_2024"))
+unaffiliated_difference <- unaffiliated_difference |>
+  mutate(percentage_increase = (unaf_2024 - unaf_2022) / unaf_2022 * 100) |>
+  arrange(desc(percentage_increase))
+
+largest_increase <- head(unaffiliated_difference, 1)
+eighth_largest_increase <- unaffiliated_difference[8, ]
+print("County with the largest increase in unaffiliated voters:")
+print(largest_increase)
+print("8th largest increase in unaffiliated voters:")
+print(eighth_largest_increase)
+
+voting_info <- tibble(
+  county = c("PR. GEORGE'S", "FREDERICK"),  
+  governor_2022 = c("Dem", "Rep"), 
+  president_2020 = c("Dem", "Dem"))
+
+largest_with_voting_info <- largest_increase |>
+  left_join(voting_info, by = "county")
+print("Voting info for the county with the largest increase in unaffiliated voters:")
+print(largest_with_voting_info)
+eighth_with_voting_info <- eighth_largest_increase |>
+  left_join(voting_info, by = "county")
+print("Voting info for the county with the 8th largest increase in unaffiliated voters:")
+print(eighth_with_voting_info)
+```
+
+Q3. Do the party percentages of new registrants (% Dem, % Rep, % Unaffiliated) from September 2024 and September 2022 match the overall percentage of partisan registration in the state at those times?
+
+In other words, did new registrants mirror the overall partisan composition of the electorate, or were they different? Do any of the methods of registration vary significantly from the overall partisan pattern? Which method is worthy of further exploration?
+
+A3.The new registrants percentages for September 2022 are Democrats 53.08%, Republicans 15.47%, Unaffiliated 31.45% and the  new registrants percentages for September 2024 are Democrats 51.52%, Republicans 18.84%, and Unaffiliated 29.64%. The overall partisan percentages for September 2022 are Democrats 55.02%, Republicans 24.41%, Unaffiliated 20.57% and the overall partisan percentages for September 2024 are Democrats 53.45%, Republicans 24.31%, and Unaffiliated 22.25%. In comparing and analyzing each percentage and the connections and differences between them, I uncovered many notable changes. In terms of democratic registrants, there has been a slight decrease in the percentage of new Democratic registrants, going from 53.08% in 2022 and dropping to 51.52% in 2024. This trend is mirrored in the overall percentages, which also show a slight decline. Looking at Republican registrants, new Republican registrants increased from 15.47% in 2022 to 18.84% in 2024. In contrast, the overall Republican percentage remained stable, which indicates a growing appeal amongst new registrants that does not necessarily align with the trend on a broader scale. When analyzing data on unaffiliated voters I took note of a decrease in proportion of unaffiliated new registrants which went from 31.45% in 2022 to 29.64% in 2024. That being said, overall unaffiliated registration increased from 20.57% to 22.25%, indicating a divergence where the new registrants do not reflect the increasing trend of unaffiliated voters in the overall electorate. All of this being said, one large take away I found was that new registrants do not fully mirror the overall partisan composition of the electorate. Though the overall electorate is becoming more unaffiliated, new registrants are demonstrating a decreasing trend in unaffiliated status and an increase in Republican affiliation.
+
+```{r}
+# new registrants
+new_registrants_2022 <- party_registrations_2022 |> 
+  summarise(democrats = sum(dem, na.rm = TRUE), 
+            republicans = sum(rep, na.rm = TRUE), 
+            unaffiliated = sum(unaf, na.rm = TRUE))
+new_registrants_2024 <- party_registrations_2024 |>
+  summarise(democrats = sum(dem, na.rm = TRUE), 
+            republicans = sum(rep, na.rm = TRUE), 
+            unaffiliated = sum(unaf, na.rm = TRUE))
+
+overall_partisan_2022 <- current_registrations_2022 |>
+  summarise(democrats = sum(dem, na.rm = TRUE), 
+            republicans = sum(rep, na.rm = TRUE), 
+            unaffiliated = sum(unaf, na.rm = TRUE))
+overall_partisan_2024 <- current_registrations_2024 |>
+  summarise(democrats = sum(dem, na.rm = TRUE), 
+            republicans = sum(rep, na.rm = TRUE), 
+            unaffiliated = sum(unaf, na.rm = TRUE))
+
+new_registrants_2022_percentages <- new_registrants_2022 |>
+  mutate(total = democrats + republicans + unaffiliated) |>
+  mutate(across(everything(), ~ . / total * 100))
+new_registrants_2024_percentages <- new_registrants_2024 |>
+  mutate(total = democrats + republicans + unaffiliated) |>
+  mutate(across(everything(), ~ . / total * 100))
+
+overall_partisan_2022_percentages <- overall_partisan_2022 |>
+  mutate(total = democrats + republicans + unaffiliated) |>
+  mutate(across(everything(), ~ . / total * 100))
+overall_partisan_2024_percentages <- overall_partisan_2024 |>
+  mutate(total = democrats + republicans + unaffiliated) |>
+  mutate(across(everything(), ~ . / total * 100))
+
+print("New Registrants Percentages 2022:")
+print(new_registrants_2022_percentages)
+
+print("New Registrants Percentages 2024:")
+print(new_registrants_2024_percentages)
+
+print("Overall Partisan Percentages 2022:")
+print(overall_partisan_2022_percentages)
+
+print("Overall Partisan Percentages 2024:")
+print(overall_partisan_2024_percentages)
+```
+
+Q4. Choose your own adventure! Using both the 2024 and 2022 data for one of the dataframes (changes, removals or new registrations), ask and answer a question that makes at least one comparison and requires code to answer. That could involve calculating a percentage, percentage change or the raw difference between two columns.
+
+A4. I chose to center my "choose your own adventure" around the 2024 and 2022 removal dataframes. The comparison based question that I designed my code to answer is... What are is the total percent change in voter removals from the years 2022 and 2024? Through writing code to answer this question I found that there was a decrease in total removals from 2022 to 2024. The percentage change in removals was approximately -16.32%, indicating that their were improvements in voter retention practices. 
+
+```{r}
+total_removals_2022 <- sum(removals_2022$total, na.rm = TRUE) 
+total_removals_2024 <- sum(removals_2024$total, na.rm = TRUE) 
+
+removal_percentage_change <- (total_removals_2024 - total_removals_2022) / total_removals_2022 * 100
+
+print(paste("Total removals in 2022:", total_removals_2022))
+print(paste("Total removals in 2024:", total_removals_2024))
+print(paste("Percentage change in removals:", removal_percentage_change))
+```
+
+Q5. What's the best story idea or question you've seen as a result of the work you've done in this lab?
+
+A5. Though I am aware I already spoke on the quantity of unaffiliated voters while answering a previous question and though I do typically make an effort to avoid repetition in my responses, I can not deny that the increasing trend of unaffiliated voters has the potential to make for a very interesting story. This fairly substantial up-kick of unaffiliated voters calls for a deeper exploration as to what issues/factors are pushing these voters to identify as unaffiliated. This story could also go the directon of investigating how how this rise may impact upcoming elections, including various strategies for political parties and different candidates. Of all of my analysis of different pieces of the data included with in Lab 6, this topic sticks out to me because it can highlight a rather pivitol moment in Maryland's political landscape, one that suggests there may growing interest toward a more diverse and nuanced electorate.

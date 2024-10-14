@@ -1,0 +1,105 @@
+---
+title: "lab_03"
+author: "Adelia McGuire"
+date: "2024-09-18"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load libraries and establish settings
+
+```{r}
+# Turn off scientific notation
+options(scipen=999)
+
+# Load the tidyverse
+library(tidyverse)
+
+# Load janitor
+library(janitor)
+```
+
+## Load data
+
+```{r}
+# Load MD slice of FEC House candidate contribution data
+md_contribs <- read_rds("data/lab_03.rds")
+```
+
+## Fix header issues
+
+You'll need to fix one issue with the column names using janitor. Write a code block to do that, making sure that you save the results to the same dataframe.
+
+```{r}
+cleaned_md_contribs <- md_contribs |>
+  clean_names()
+
+cleaned_md_contribs
+```
+
+
+## Answer questions
+
+Q1: Which seven cities in Maryland had the largest *number* of contributions from donors? How many did each have? To answer this question, you'll have to clean the messy "contributor_city" field.
+
+Note: To answer this question, you'll need to see every variation of the "contributor_city" for the top seven cities, which you should identify through some initial analysis. Then find variations of them and change those variations into the most common version.
+
+A1:The top seven cities in Maryland that have the largest number of contributions are Bethesda, Chevy Chase, Baltimore, Annapolis, Potomac, Silver Spring and Rockville. Bethesda has the greatest number of contributions at 1177, Chevy Chase has 704, Baltimore has 690, Annapolis and Potomac each have 490, Silver Spring has 405 and Rockville has 358. 
+
+```{r}
+top_cities <- cleaned_md_contribs|>
+  group_by(contributor_city) |>
+    summarise(count=n())|>
+    
+arrange(desc(count))
+    
+top_cities
+
+```
+
+Q2: Find the 5-digit ZIP code in Maryland that had the highest total amount of contributions (by dollar value). You will need to use mutate to ensure that you have a zip code column with the first five characters from the existing zip code column.
+
+Where is that zip code and what kind of area is it, demographically? Which committee is the largest recipient of money from that zip code? How many of the top five recipients are Maryland candidates?
+
+A2: The five digit ZIP code in Maryland that had the highest amount of contributions (by dollar value) is 20817 with a total of 731489.80 worth of contributions. This ZIP code matches with the demographic area of Montgomery County, Maryland. According to my research the people living in he ZIP code 20815 are typically white and their is a very large population of elderly and middle aged residents.The committee that is the largest recipient of money from the zip code 20817 is Helmer for Congress. Helmer for Congress is collects a total of 17878.00 worth of contributions. The top five recipients, the ones that have the most amount of contributions, are HELMER FOR CONGRESS with 17878.00, FRIENDS OF RAJA FOR CONGRESS with 16650.00, JAMIE RASKIN FOR CONGRESS	with 14770.24, FRENCH HILL FOR ARKANSAS	with 14700.00, and APRIL MCCLAIN DELANEY FOR CONGRESS with 13350.00. Helmer for Congress is a candidate of Virginia, Friends of Raja for Congress is a candidate of Illinois, Jamie Raskin for Congress is a candidate of Maryland, French Hill for Arkansas is a candidate of Arkansas, and April McClain Delaney for Congress is a candidate of Maryland. This means that two of the five top recipients are Maryland candidates. 
+
+```{r}
+cleaned_zip <- cleaned_md_contribs|>
+  mutate(five_digit_zip = str_sub(contributor_zip, start=1L, end=5L))|>
+  group_by(five_digit_zip) |>
+    summarise(dollar=sum(contribution_receipt_amount))|>
+    arrange(desc(dollar))
+  
+```
+
+```{r}
+cleaned_md_contribs <- cleaned_md_contribs|>
+  mutate(five_digit_zip = str_sub(contributor_zip, start=1L, end=5L))
+```
+
+```{r}
+top_committee <-cleaned_md_contribs|>
+filter(five_digit_zip=='20817')|>
+  group_by(committee_name)|>
+  summarise(dollar=sum(contribution_receipt_amount))|>
+  arrange(desc(dollar))
+top_committee
+```
+
+
+Q3: Let's look at top individual donors. Write code to generate a list of top donors using name and city, adding up the total amount of contributions. What does the original data say about the top two donors - who are they and what do they do? Do you see anything in the list of top 10 donors that would make you uncertain about the accuracy of these results?
+
+A3:According to the data, the top two donors or "contributors" are Melanie Jacobsen with a total contribution of 96466.65 and Mark P. Jacobsen with a total contribution of 67533.32. Melanie and Mark, both of whom are from Bethesda, Maryland, are successful in their careers. Melanie is a former SEC senior special counsel in the Office of the Chief Accountant and currently works as an attorney. Mark is a mental health practitioner and currently works as a licensed clinical social worker. After analyzing the data and the names of the top ten donors I have some major concerns about the accuracy of these results. Within the top ten names I see two sets of duplicates, one of which is "Mark P. Jacobsen" and Mark Jacobsen" and the other is "William Pugh" and "Bill Pugh". These duplicates are problems in the data that we would have to fix using the get_dupes() function. 
+
+```{r}
+top_donors <- cleaned_md_contribs |>
+  group_by(contributor_name, contributor_city) |>
+  summarise(total_contribution = sum(contribution_receipt_amount, na.rm = TRUE)) |>
+  arrange(desc(total_contribution))
+
+top_10_donors <- top_donors |> head(10)
+top_10_donors
+```
