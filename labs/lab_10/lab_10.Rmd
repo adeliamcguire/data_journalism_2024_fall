@@ -1,0 +1,257 @@
+---
+title: "lab_10"
+author: "Adelia McGuire"
+date: "2024-11-07"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## You will need
+
+-   the tidyverse, janitor and tigris libraries
+-   you might choose to use the tidycensus library for Q3
+
+## Load libraries and establish settings
+
+**Task** Create a codeblock and load appropriate packages and settings for this lab.
+
+```{r}
+# Turn off scientific notation
+options(scipen=999)
+
+# Load libraries
+library(tidyverse)
+library(tidycensus)
+library(sf)
+library(janitor)
+library(tigris)
+library(tmap)
+library(viridis)
+library(ggplot2)
+```
+
+Let's explore the election results from last night and make some maps!
+
+## Questions
+
+**Q1.** Make a county-level map of Maryland's results for U.S. Senate using `md_senate_county_24.csv` in the data folder, calculating the difference between Angela Alsobrooks's percentage of the total votes and Larry Hogan's percentage of the total votes and displaying that percentage difference on the map. What is the story here, and what is the county with the most interesting results?
+
+**A1.** This county-level map displays the regional differences that exist across Maryland's political landscape, revealing the counties that ultimately leaned toward Angela Alsobrooks and the ones which leaned toward Larry Hogan. Counties in central Maryland, such as PG County or MOCO, tend to be more likely to express strong support for Alsobrooks.These Alsobrooks supporting counties that are often more diverse in their racial demographics and are just generally feature urban populations, have some of the highest concentrations of Democratic identifying voters in the state. Oppositely, counties in Western Maryland like Washington County or even Garrett County that are rural and predominantly conservatively areas are very much more on the Hogan train. When it comes to finding the true heart of the story within the data I believe that Prince George’s County is likely to make for one of the strongest, most news worthy story in terms of its percentage difference. PG County has a rather large African American population and a Democratic-leaning electorate, Alsobrooks could have quite the advantage over Hogan in this area. On the other side of things, looking at Hogan, Garrett County and other western counties may show a significant advantage for Hogan, revealing an important story regarding how the state's urban-rural divide plays into who residents are voting for. 
+Identifying Key Swing Counties: Another potential story direction that came to mind is covering how some suburban counties may have a smaller difference in percentages and how this may reflect more balanced or rather competitive results. In analyzing and reporting on political trends at the county level, taking particular note of these areas can be crucialfor understanding shifting political atmospheres. For example, Baltimore County and Anne Arundel County, two close Maryland counties could have small differences in percentage, with Alsobrooks leading in the urban areas and Hogan leading in the suburban areas.
+
+To sum up my thinking... The map I have created works to provide valuable insight into Maryland’s county-level voting behavior in the 2024 U.S. Senate race. By being able to visualize the percentage difference between Angela Alsobrooks and Larry Hogan, we can clearly observe the states regional based political trends and even identify key counties that are experiencing substantial voting shifts. When it comes to looking at the map as a journalist, in my opinion PG County shows the most interesting and report worthy results, when you take into consideration its large population and how important it is in Maryland elections. 
+
+```{r}
+md_senate_data <- read.csv("data/md_senate_county_24.csv")
+
+md_senate_data <- md_senate_data |>
+  mutate(
+    Total_Votes = Alsobrooks + Hogan + Scott,           
+    Alsobrooks_Percent = Alsobrooks / Total_Votes * 100,   
+    Hogan_Percent = Hogan / Total_Votes * 100,             
+    Percentage_Difference = Alsobrooks_Percent - Hogan_Percent     
+  )
+
+md_counties_shapefile <- counties(state = "MD", cb = TRUE) 
+
+colnames(md_counties_shapefile)
+
+md_counties_shapefile <- md_counties_shapefile |>
+  mutate(
+    County = gsub(" County$", "", NAMELSAD) 
+  )
+
+md_map_data <- md_counties_shapefile |>
+  left_join(md_senate_data, by = "County") 
+
+tm_shape(md_map_data) +
+  tm_borders() +
+  tm_fill(col = "Percentage_Difference", 
+          palette = "-RdBu", 
+          style = "cont", 
+          title = "Difference in % of total votes") +
+  tm_layout(
+    main.title = "Maryland in Urban-Rural Divide over Election for Senate", 
+    main.title.size = 1.6,
+    legend.position = c("left", "bottom")
+  ) +
+  tm_legend(position = c("left", "bottom"))
+```
+
+**Q2.** Make a county-level map showing the difference between Donald Trump's county-level performance this year and Larry Hogan's, using percentages to compare the two as you did in Q1. You can use the dataframe you initially loaded for Q1, and you'll need to load the 2024 presidential results in the data folder and join them to it before proceeding. Are there any counties where Trump got a higher percentage than Hogan? How would you describe the map showing the Trump-Hogan difference?
+
+Also answer this: is a map the best way to present this data? What else could you make that might convey more information?
+
+**A2.** This county-level map compares the difference between Trump and Hogan's county-level performance this year. I created this map in a way that identifies the specific areas where Trump outperformed Hogan (meaning he got a higher percentage of votes), by marking this positive Trump-Hogan difference with blue shades, as seen in the legend located in the bottom left corner of the map. There are a multitude of counties in Maryland where Trump outperformed Hogan in the 2024 election, three that clearly stand out to me are Anne Arundel, Talbot, and Montgomery county. Beyond these three, this map reveals a geographic pattern of how each candidate performed relative to the other across the state of Maryland, highlighting regional political trends. As the blue gets deeper and darker in its color, the stronger the support of Trump compared to Hogan. I believe that a map is an efficient way to present this data because it visually distinguishes the counties where Trump outperformed Hogan from the counties where Hogan outperformed Trump by using a diverging color scale. That being said, while I am confident that this map is effective for visually showing geographic trends, it may not be as successful in conveying they sheer magnitudes of the differences in how these two candidates performed. One could also opt to use a bar chart in this situation as it has potential to be more precise and highlight the extent of difference more effectively.
+
+```{r}
+md_presidential_data <- read.csv("data/md_pres_county_24.csv")
+md_senate_data <- read.csv("data/md_senate_county_24.csv")
+
+md_presidential_data <- md_presidential_data |>
+  mutate(
+    Total_Votes_Pres = Harris + Trump + Oliver + Stein + Kennedy,  
+    Trump_Percent = (Trump / Total_Votes_Pres) * 100,         
+  )
+
+md_senate_data <- md_senate_data |>
+  mutate(
+    Total_Votes_Senate = Alsobrooks + Hogan + Scott,
+    Hogan_Percent = (Hogan / Total_Votes_Senate) * 100,    
+)
+
+md_combined_data <- md_presidential_data |>
+  left_join(md_senate_data, by = "County")
+
+md_combined_data <- md_combined_data |>
+  mutate(
+    Trump_Hogan_Percentage_Difference = Trump_Percent - Hogan_Percent
+  )
+
+md_counties_shapefile <- counties(state = "MD", cb = TRUE)
+
+md_counties_shapefile <- md_counties_shapefile |>
+  mutate(County = gsub(" County$", "", NAMELSAD))
+
+md_pres_map_data <- md_counties_shapefile |>
+  left_join(md_combined_data, by = "County")
+
+tm_shape(md_pres_map_data) +
+  tm_borders() + 
+  tm_fill(col = "Trump_Hogan_Percentage_Difference",  
+          palette = "-RdBu",             
+          style = "cont",             
+          title = "Trump-Hogan Presidential Difference (%)") +
+  tm_layout(
+    main.title = "Trump Outperforms Hogan in Central Maryland (2024 Presidential Election)", 
+    main.title.size = 1.2,
+    legend.position = c("left", "bottom") 
+  ) +
+  tm_legend(position = c("left", "bottom"))
+```
+
+**Q3** Make another map showing the difference between Larry Hogan's county-level performance this year and from his governor race in 2018, using percentages to compare the two as you did in Q2. You can use the dataframe you initially loaded for Q1, and you'll need to load the 2018 governor results in the data folder and join them to it before proceeding. Are there any counties where Hogan did better this year? How would you describe the map showing the difference?
+
+**A3** In solving this question I separated my code into two code blocks to provide a map of the entire state of Maryland as well as a map of the sole county I am focusing in on.The county where Hogan did better this year is Baltimore County. Hogan improved his performance in this area by a total of 13.63%.
+
+```{r}
+md_gov_data <- read.csv("data/md_gov_county_18.csv")
+md_senate_data <- read.csv("data/md_senate_county_24.csv")
+
+md_gov_data <- md_gov_data |>
+  clean_names() |>
+  mutate(county = gsub(" County$", "", county))  
+
+md_senate_data <- md_senate_data |>
+  clean_names() |>
+  mutate(county = gsub(" County$", "", county))
+
+md_gov_data <- md_gov_data |>
+  mutate(
+    total_votes_gov = hogan + jealous + quinn + schlakman + write_ins,
+    hogan_gov_percent = (hogan / total_votes_gov) * 100
+  )
+
+md_senate_data <- md_senate_data |>
+  mutate(
+    total_votes_senate = alsobrooks + hogan + scott,
+    hogan_senate_percent = (hogan / total_votes_senate) * 100
+  )
+
+md_combined_data <- md_gov_data |>
+  left_join(md_senate_data, by = "county") |>
+  mutate(
+    hogan_percentage_difference = hogan_gov_percent - hogan_senate_percent
+  )
+
+md_counties_shapefile <- counties(state = "MD", cb = TRUE)
+
+md_counties_shapefile <- md_counties_shapefile |>
+  clean_names() |>
+  mutate(county = gsub(" County$", "", namelsad)) 
+
+md_counties_shapefile <- md_counties_shapefile |>
+  mutate(
+    county = ifelse(county == "Baltimore city", "Baltimore", county),
+    county = trimws(county) 
+  )
+
+md_hogan_difference_data <- left_join(md_counties_shapefile, md_combined_data, by = "county")
+
+tm_shape(md_hogan_difference_data) +
+  tm_borders() + 
+  tm_fill(col = "hogan_percentage_difference",  
+          palette = "-RdBu",             
+          style = "cont",             
+          title = "Hogan % Difference (2018 to 2024)") +
+  tm_layout(
+    main.title = "Improvement in Hogan's Performance (2024 Senate vs. 2018 Governor)",
+    main.title.size = 1.3,
+    legend.position = c("left", "bottom")
+  ) +
+  tm_legend(position = c("left", "bottom"))
+```
+
+```{r}
+md_hogan_difference_data_filtered <- md_hogan_difference_data |>
+  filter(!is.na(hogan_percentage_difference))
+
+tm_shape(md_hogan_difference_data_filtered) +
+  tm_borders() + 
+  tm_fill(col = "hogan_percentage_difference",
+          palette = "-RdBu",             
+          style = "cont",             
+          title = "Hogan % Difference (2018 to 2024)") +
+  tm_layout(
+    main.title = "Increasing Support for Hogan in Baltimore County",
+    main.title.size = .9,
+    legend.position = c("left", "bottom")
+  ) +
+  tm_legend(position = c("left", "bottom"))
+```
+
+**Q4.** Choose your own map adventure! In the data folder I've included Maryland county-level results for the abortion rights amendment vote this year, plus the 2020 presidential results by county and 2022 governor's results by county. Using one of those and at least one other contest for comparison, make a county-level map showing what you think is the most interesting aspect of that data, and describe the results in terms of a possible story. You can bring in other data, such as Census information, if you like.
+
+**A4.** In this map adventure I chose to compare data from the csv files, md_abortion_2024 and md_pres_county_24. The story behind my map us analyzing the percent of Marylander's at the county level that support Trump and are "For" abortion. The map shows the geography of Maryland color coded where "red" or orange areas represent the counties that had more people in support of Trump than for the abortion rights amendment. This indicates general strong support behind Trump and opposition to abortion rights. The blue areas of the map are areas of the state where a counties support for abortion rights was higher than their support for Trump, telling me these locations are in favor of reproductive rights and a woman's right to an abortion. The greenish areas you will see on the map make up the counties within Maryland that have rather mixed support and the difference between abortion rights support and Trump support is not very substantial. I find this map to tell a story in itself as it helps visualize the relationship that exists between ones support or non-support of abortion and how it often correlates with who they want to see in office as president of the United States. As I predicted, the counties in central Maryland that are typically democratic leaning like Montgomery County, Prince George's County, and Howard County, all heavily favored their support of abortion over their support for Trump. On the topic of stories, I believe this map also lends itself to serve as a representation of the increasing political and cultural divide in Maryland. When we look especially at the difference in urban and rural areas when it comes down to the support for abortion rights and political affiliation, their is a stark contrast. The map shows that the states urban counties, like MOCO and PG County are overwhelmingly in support abortion rights, aligning with their lack of support for Donald Trump in the 2024 presidential election. In contrast, rural counties in areas of Western/Eastern Shore Maryland are very opposed to abortion rights but greatly in support of Donald Trump. To kind of sum up my thoughts, I feel that this divide truly works to highlights how social issues like abortion have become some entangled and intertwined within ones broad political identity. reinforcing existing political fault lines across the state. 
+
+```{r}
+abortion_data <- read.csv("data/md_abortion_24.csv") 
+presidential_data <- read.csv("data/md_pres_county_24.csv") 
+
+abortion_data <- abortion_data |>
+  mutate(total_votes = For + Against,
+         abortion_support_percentage = For / total_votes)
+
+presidential_data <- presidential_data |>
+  mutate(total_presidential_votes = Harris + Trump + Oliver + Stein + Kennedy,
+         trump_percentage = Trump / total_presidential_votes)
+
+merged_data <- merge(abortion_data, presidential_data, by.x = "County", by.y = "County")
+
+maryland_counties <- counties(state = "MD", cb = TRUE)
+
+maryland_map <- maryland_counties |>
+  left_join(merged_data, by = c("NAME" = "County"))
+
+maryland_map <- maryland_map |>
+  mutate(support_difference = abortion_support_percentage - trump_percentage)
+
+ggplot(data = maryland_map) +
+  geom_sf(aes(fill = support_difference), color = "white", size = 0.1) +
+  scale_fill_gradient2(low = "red", high = "blue", mid = "green", midpoint = 0,
+                       name = "Support Difference",
+                       labels = scales::percent) +
+  labs(title = "A Small Percent of Marylanders by County who Support Abortion also Voted for Trump",
+       subtitle = "Orange areas show more opposition to abortion rights than Trump support, blue areas show more support for abortion rights than Trump",
+       caption = "Source: 2024 Abortion Amendment Vote & 2024 Presidential Election Results") +
+  theme_minimal() +
+  theme(axis.text = element_blank(),
+        axis.title = element_blank(),
+        panel.grid = element_blank(),
+        plot.title = element_text(size = 13.5, face = "bold"),
+        plot.subtitle = element_text(size = 8))
+```
+
